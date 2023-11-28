@@ -1,5 +1,6 @@
-from flask import Flask
+from flask import Flask, jsonify
 import paho.mqtt.client as mqtt
+from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
@@ -11,30 +12,55 @@ app = Flask(__name__)
 # Configura los detalles del broker MQTT
 mqtt_broker = os.getenv("MQTT_BROKER")
 mqtt_port = 1883
-mqtt_topic = os.getenv("TEMP_TOPIC")
+temperatura_topic = os.getenv("TEMP_TOPIC")
+humedad_topic = os.getenv("HUME_TOPIC")
 
-# El callback para cuando el cliente recibe una CONNACK del servidor
+# Configuración de MongoDB
+mongo_client = MongoClient('mongodb://mongo:27017/')
+db = mongo_client['sensor_database']  # Nombre de la base de datos
+temperature_collection = db['temperatura']  # Colección para la temperatura
+humidity_collection = db['humedad']  # Colección para la humedad
+
+# Callback para cuando el cliente recibe una CONNACK del servidor
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.subscribe(mqtt_topic)
+    client.subscribe(temperatura_topic)
+    client.subscribe(humedad_topic)
 
-# El callback que se llama cuando se recibe un mensaje del servidor.
+# Callback que se llama cuando se recibe un mensaje del servidor.
 def on_message(client, userdata, msg):
-    print(msg.topic + " " + msg.payload.decode('utf-8'))
-    # Aquí puedes procesar los datos recibidos
+    if msg.topic == temperatura_topic:
+        print(msg.topic + " " + msg.payload.decode('utf-8'))
+        temperature_collection.insert_one({"temperatura": float(msg.payload)})
+    elif msg.topic == humedad_topic:
+        print(msg.topic + " " + msg.payload.decode('utf-8'))
+        humidity_collection.insert_one({"humedad": float(msg.payload)})
 
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
 client.connect(mqtt_broker, mqtt_port, 60)
-
-# Inicia un bucle en segundo plano para escuchar los mensajes
 client.loop_start()
 
 @app.route('/')
 def index():
     return "MQTT to Flask Bridge"
 
+@app.route('/temperatura')
+def get_temperature():
+    temperatures = temperature_collection.find().sort("_id", -1).limit(10)
+    # Convertir cada ObjectId a string
+    result = [{"temperatura": temp["temperatura"], "id": str(temp["_id"])} for temp in temperatures]
+    return jsonify(result)
+
+
+@app.route('/humedad')
+def get_humidity():
+    # Recupera los últimos 10 registros de humedad
+    humidities = humidity_collection.find().sort("_id", -1).limit(10)
+    result = [{"humedad": temp["humedad"], "id": str(temp["_id"])} for temp in humidities]
+    return jsonify(result)
+
 if __name__ == '__main__':
-    app.run( host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')
