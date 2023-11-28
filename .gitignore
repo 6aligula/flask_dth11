@@ -1,0 +1,15 @@
+# .gitignore
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+*.env
+*.sqlite
+instance/
+#env
+dht11_env
