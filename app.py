@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 import paho.mqtt.client as mqtt
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from datetime import datetime
+import pytz
 from dotenv import load_dotenv
 import os
 
@@ -51,24 +51,28 @@ client.loop_start()
 def index():
     return "MQTT to Flask Bridge"
 
+def convert_utc_to_local(utc_dt, local_tz):
+    local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
+    return local_dt.strftime('%Y-%m-%d %H:%M:%S')
+
 @app.route('/temperatura')
 def get_temperature():
+    local_tz = pytz.timezone("Europe/Madrid")  # Reemplaza con tu zona horaria
     temperatures = temperature_collection.find().sort("_id", -1).limit(10)
     result = [{
-        "temperatura": temp["temperatura"], 
-        "timestamp": ObjectId(temp["_id"]).generation_time.strftime('%Y-%m-%d %H:%M:%S')
+        "temperatura": temp["temperatura"],
+        "timestamp": convert_utc_to_local(ObjectId(temp["_id"]).generation_time, local_tz)
     } for temp in temperatures]
     return jsonify(result)
 
-
 @app.route('/humedad')
 def get_humidity():
+    local_tz = pytz.timezone("Europe/Madrid")  # Reemplaza con tu zona horaria
     humidities = humidity_collection.find().sort("_id", -1).limit(10)
     result = [{
-        "humedad": temp["humedad"], 
-        "timestamp": ObjectId(temp["_id"]).generation_time.strftime('%Y-%m-%d %H:%M:%S')
+        "humedad": temp["humedad"],
+        "timestamp": convert_utc_to_local(ObjectId(temp["_id"]).generation_time, local_tz)
     } for temp in humidities]
     return jsonify(result)
-
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
