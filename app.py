@@ -1,6 +1,8 @@
 from flask import Flask, jsonify
 import paho.mqtt.client as mqtt
 from pymongo import MongoClient
+from bson.objectid import ObjectId
+from datetime import datetime
 from dotenv import load_dotenv
 import os
 
@@ -52,16 +54,20 @@ def index():
 @app.route('/temperatura')
 def get_temperature():
     temperatures = temperature_collection.find().sort("_id", -1).limit(10)
-    # Convertir cada ObjectId a string
-    result = [{"temperatura": temp["temperatura"], "id": str(temp["_id"])} for temp in temperatures]
+    result = [{
+        "temperatura": temp["temperatura"], 
+        "timestamp": ObjectId(temp["_id"]).generation_time.strftime('%Y-%m-%d %H:%M:%S')
+    } for temp in temperatures]
     return jsonify(result)
 
 
 @app.route('/humedad')
 def get_humidity():
-    # Recupera los últimos 10 registros de humedad
     humidities = humidity_collection.find().sort("_id", -1).limit(10)
-    result = [{"humedad": temp["humedad"], "id": str(temp["_id"])} for temp in humidities]
+    result = [{
+        "humedad": temp["humedad"], 
+        "timestamp": ObjectId(temp["_id"]).generation_time.strftime('%Y-%m-%d %H:%M:%S')
+    } for temp in humidities]
     return jsonify(result)
 
 if __name__ == '__main__':
