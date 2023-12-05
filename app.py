@@ -3,7 +3,6 @@ import paho.mqtt.client as mqtt
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import pytz
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
 
@@ -78,10 +77,20 @@ def calcular_mediana_temperatura():
 def get_temperature():
     local_tz = pytz.timezone("Europe/Madrid")  # Reemplaza con tu zona horaria
     mediana_temp = calcular_mediana_temperatura()
-    temperature = temperature_collection.find().sort("_id", -1).limit(1)
+
+    # Obtener el último registro de temperatura
+    ultimo_registro = temperature_collection.find().sort("_id", -1).limit(1)
+    
+    # Verificar si se encontró algún registro
+    if ultimo_registro.count() == 0:
+        return jsonify({"error": "No se encontraron datos de temperatura"})
+
+    # Acceder al primer (y único) elemento del cursor
+    ultimo_registro = list(ultimo_registro)[0]
+
     result = {
-        "temperatura": temperature["temperatura"],
-        "timestamp": convert_utc_to_local(ObjectId(temperature["_id"]).generation_time, local_tz),
+        "temperatura": ultimo_registro["temperatura"],
+        "timestamp": convert_utc_to_local(ObjectId(ultimo_registro["_id"]).generation_time, local_tz),
         "mediana": mediana_temp,
     }
     return jsonify(result)
