@@ -57,24 +57,19 @@ def convert_utc_to_local(utc_dt, local_tz):
     return local_dt.strftime('%Y-%m-%d %H:%M:%S')
 
 def calcular_mediana_temperatura():
-    # Calcula la hora actual y resta 1.5 horas para obtener el rango de tiempo
-    hora_fin = datetime.now(pytz.timezone("Europe/Madrid"))
-    hora_inicio = hora_fin - timedelta(hours=1, minutes=30)
+    # Obtener los últimos 6 registros de temperatura
+    temperaturas = temperature_collection.find().sort("_id", -1).limit(6)
 
-    # Consulta para obtener temperaturas en el rango de tiempo
-    temperaturas = temperature_collection.find({
-        "timestamp": {
-            "$gte": hora_inicio,
-            "$lte": hora_fin
-        }
-    }).sort("timestamp", 1)
-
-    # Extrae los valores de temperatura
+    # Extraer los valores de temperatura
     valores = [temp["temperatura"] for temp in temperaturas]
 
-    # Ordena los valores y calcula la mediana
-    valores.sort()
+    # Verificar si hay suficientes valores para calcular la mediana
     n = len(valores)
+    if n == 0:
+        return None  # O manejar de otra manera, por ejemplo, lanzando una excepción
+
+    # Ordenar los valores y calcular la mediana
+    valores.sort()
     mediana = valores[n // 2] if n % 2 != 0 else (valores[n // 2 - 1] + valores[n // 2]) / 2
     return mediana
 
