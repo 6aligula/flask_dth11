@@ -72,6 +72,17 @@ def calcular_mediana_temperatura():
     mediana = valores[n // 2] if n % 2 != 0 else (valores[n // 2 - 1] + valores[n // 2]) / 2
     return mediana
 
+def get_last_humedad():
+    # Obtener el último registro de temperatura
+    ultimo_registro = humidity_collection.find().sort("_id", -1).limit(1)
+    
+    # Verificar si se encontró algún registro
+    if ultimo_registro.count() == 0:
+        return jsonify({"error": "No se encontraron datos de humedad"})
+
+    # Acceder al primer (y único) elemento del cursor
+    ultimo_registro = list(ultimo_registro)[0]
+    return ultimo_registro["humedad"]
 
 @app.route('/temperatura')
 def get_temperature():
@@ -88,10 +99,14 @@ def get_temperature():
     # Acceder al primer (y único) elemento del cursor
     ultimo_registro = list(ultimo_registro)[0]
 
+    # Lllamar a la función para obtener la última humedad
+    ultima_humedad = get_last_humedad()
+
     result = {
         "temperatura": ultimo_registro["temperatura"],
         "timestamp": convert_utc_to_local(ObjectId(ultimo_registro["_id"]).generation_time, local_tz),
         "mediana": mediana_temp,
+        "humedad": ultima_humedad, 
     }
     return jsonify(result)
 
