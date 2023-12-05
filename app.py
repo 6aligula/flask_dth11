@@ -3,6 +3,7 @@ import paho.mqtt.client as mqtt
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import pytz
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
 
@@ -55,14 +56,39 @@ def convert_utc_to_local(utc_dt, local_tz):
     local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
     return local_dt.strftime('%Y-%m-%d %H:%M:%S')
 
+def calcular_mediana_temperatura():
+    # Calcula la hora actual y resta 1.5 horas para obtener el rango de tiempo
+    hora_fin = datetime.now(pytz.timezone("Europe/Madrid"))
+    hora_inicio = hora_fin - timedelta(hours=1, minutes=30)
+
+    # Consulta para obtener temperaturas en el rango de tiempo
+    temperaturas = temperature_collection.find({
+        "timestamp": {
+            "$gte": hora_inicio,
+            "$lte": hora_fin
+        }
+    }).sort("timestamp", 1)
+
+    # Extrae los valores de temperatura
+    valores = [temp["temperatura"] for temp in temperaturas]
+
+    # Ordena los valores y calcula la mediana
+    valores.sort()
+    n = len(valores)
+    mediana = valores[n // 2] if n % 2 != 0 else (valores[n // 2 - 1] + valores[n // 2]) / 2
+    return mediana
+
+
 @app.route('/temperatura')
 def get_temperature():
     local_tz = pytz.timezone("Europe/Madrid")  # Reemplaza con tu zona horaria
-    temperatures = temperature_collection.find().sort("_id", -1).limit(10)
-    result = [{
-        "temperatura": temp["temperatura"],
-        "timestamp": convert_utc_to_local(ObjectId(temp["_id"]).generation_time, local_tz)
-    } for temp in temperatures]
+    mediana_temp = calcular_mediana_temperatura()
+    temperature = temperature_collection.find().sort("_id", -1).limit(1)
+    result = {
+        "temperatura": temperature["temperatura"],
+        "timestamp": convert_utc_to_local(ObjectId(temperature["_id"]).generation_time, local_tz),
+        "mediana": mediana_temp,
+    }
     return jsonify(result)
 
 @app.route('/humedad')
