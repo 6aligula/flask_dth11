@@ -30,7 +30,7 @@ def calcular_y_guardar_mediana_temperatura():
     # Guardar la mediana en la base de datos con timestamp
     mediana_collection.insert({"mediana": mediana})
 
-    print(f"Mediana de temperatura {mediana} guardada en la base de datos. a  fecha {time}")
+    print(f"Mediana de temperatura {mediana} guardada, fecha {time}")
     return mediana
 
 if __name__ == "__main__":
