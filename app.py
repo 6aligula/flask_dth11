@@ -84,31 +84,39 @@ def get_last_humedad():
     ultimo_registro = list(ultimo_registro)[0]
     return ultimo_registro["humedad"]
 
+def get_last_7_registros(collection):
+    # Obtener los últimos 7 registros de una colección
+    ultimos_7_registros = collection.find().sort("_id", -1).limit(7)
+    
+    # Verificar si se encontraron registros
+    if ultimos_7_registros.count() == 0:
+        return None
+
+    # Convertir a lista y devolver
+    return list(ultimos_7_registros)
+
+
 @app.route('/temperatura')
 def get_temperature():
-    local_tz = pytz.timezone("Europe/Madrid")  # Reemplaza con tu zona horaria
+    local_tz = pytz.timezone("Europe/Madrid")
     mediana_temp = calcular_mediana_temperatura()
 
-    # Obtener el último registro de temperatura
-    ultimo_registro = temperature_collection.find().sort("_id", -1).limit(1)
-    
-    # Verificar si se encontró algún registro
-    if ultimo_registro.count() == 0:
-        return jsonify({"error": "No se encontraron datos de temperatura"})
-
-    # Acceder al primer (y único) elemento del cursor
-    ultimo_registro = list(ultimo_registro)[0]
-
-    # Lllamar a la función para obtener la última humedad
+    # Obtener los últimos 7 registros de temperatura y humedad
+    ultimos_7_temperaturas = get_last_7_registros(temperature_collection)
     ultima_humedad = get_last_humedad()
 
+    # Verificar si se encontraron registros
+    if not ultimos_7_temperaturas or not ultima_humedad:
+        return jsonify({"error": "No se encontraron datos suficientes"})
+
     result = {
-        "temperatura": ultimo_registro["temperatura"],
-        "timestamp": convert_utc_to_local(ObjectId(ultimo_registro["_id"]).generation_time, local_tz),
+        "ultimas_temperaturas": [registro["temperatura"] for registro in ultimos_7_temperaturas],
+        "timestamp": convert_utc_to_local(ObjectId(ultimos_7_temperaturas[0]["_id"]).generation_time, local_tz),
         "mediana": mediana_temp,
-        "humedad": ultima_humedad, 
+        "humedad": ultima_humedad,
     }
     return jsonify(result)
+
 
 @app.route('/humedad')
 def get_humidity():
