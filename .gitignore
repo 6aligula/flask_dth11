@@ -13,3 +13,4 @@ build/
 instance/
 #env
 dht11_env
+cron.log
