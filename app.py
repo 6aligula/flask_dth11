@@ -34,11 +34,23 @@ def on_message(client, userdata, msg):
     payload = msg.payload.decode('utf-8')
     if msg.topic == temperatura_topic:
         print(msg.topic + " " + payload)
-        temperature_collection.insert({"temperatura": float(payload)})
+        temperatura = float(payload)
+
+        # Verificar si la temperatura es menor o igual a cero
+        if temperatura <= 0:
+            temperatura_mediana = calcular_mediana_temperatura()
+            if temperatura_mediana is not None:
+                temperatura = temperatura_mediana
+            else:
+                print("Mediana no disponible, usando valor por defecto")
+                temperatura = 18  # Valor por defecto si la mediana no está disponible
+
+        temperature_collection.insert({"temperatura": temperatura})
 
     elif msg.topic == humedad_topic:
         print(msg.topic + " " + payload)
         humidity_collection.insert({"humedad": float(payload)})
+
 
 client = mqtt.Client()
 client.on_connect = on_connect
