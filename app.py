@@ -22,6 +22,7 @@ mongo_client = MongoClient('mongodb://127.0.0.1:27017/')
 db = mongo_client['sensor_database']  # Nombre de la base de datos
 temperature_collection = db['temperatura']  # Colección para la temperatura
 humidity_collection = db['humedad']  # Colección para la humedad
+mediana_collection = db['mediana_temperatura']  # Colección para la mediana de la temperatura
 
 # Callback para cuando el cliente recibe una CONNACK del servidor
 def on_connect(client, userdata, flags, rc):
@@ -74,7 +75,7 @@ def convert_utc_to_local(utc_dt, local_tz):
 
 def calcular_mediana_temperatura():
     # Obtener los últimos 6 registros de temperatura
-    temperaturas = temperature_collection.find().sort("_id", -1).limit(6)
+    temperaturas = temperature_collection.find().sort("_id", -1).limit(7)
 
     # Extraer los valores de temperatura
     valores = [temp["temperatura"] for temp in temperaturas]
@@ -82,11 +83,15 @@ def calcular_mediana_temperatura():
     # Verificar si hay suficientes valores para calcular la mediana
     n = len(valores)
     if n == 0:
-        return None  # O manejar de otra manera, por ejemplo, lanzando una excepción
+        raise ValueError("No hay suficientes datos para calcular la mediana")
 
     # Ordenar los valores y calcular la mediana
     valores.sort()
     mediana = valores[n // 2] if n % 2 != 0 else (valores[n // 2 - 1] + valores[n // 2]) / 2
+
+    # Guardar la mediana en la base de datos
+    mediana_collection.insert_one({"mediana": mediana})
+
     return mediana
 
 def get_last_humedad():
