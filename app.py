@@ -88,10 +88,8 @@ def calcular_mediana_temperatura():
     # Ordenar los valores y calcular la mediana
     valores.sort()
     mediana = valores[n // 2] if n % 2 != 0 else (valores[n // 2 - 1] + valores[n // 2]) / 2
-
     # Guardar la mediana en la base de datos
-    mediana_collection.insert_one({"mediana": mediana})
-
+    mediana_collection.insert({"mediana": mediana})
     return mediana
 
 def get_last_humedad():
