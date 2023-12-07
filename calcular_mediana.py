@@ -24,11 +24,13 @@ def calcular_y_guardar_mediana_temperatura():
     # Ordenar los valores y calcular la mediana
     valores.sort()
     mediana = valores[n // 2] if n % 2 != 0 else (valores[n // 2 - 1] + valores[n // 2]) / 2
+    
+    time =  datetime.utcnow()
 
     # Guardar la mediana en la base de datos con timestamp
-    mediana_collection.insert({"mediana": mediana, "timestamp": datetime.utcnow()})
+    mediana_collection.insert({"mediana": mediana})
 
-    print(f"Mediana de temperatura {mediana} guardada en la base de datos.")
+    print(f"Mediana de temperatura {mediana} guardada en la base de datos. a  fecha {time}")
     return mediana
 
 if __name__ == "__main__":
