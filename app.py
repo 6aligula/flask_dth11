@@ -34,7 +34,7 @@ def on_message(client, userdata, msg):
     payload = msg.payload.decode('utf-8')
     if msg.topic == temperatura_topic:
         print(msg.topic + " " + payload)
-        temperatura = float(payload)
+        temperatura = float(payload) - 5
 
         # Verificar si la temperatura es menor o igual a cero
         if temperatura <= 0:
@@ -49,7 +49,9 @@ def on_message(client, userdata, msg):
 
     elif msg.topic == humedad_topic:
         print(msg.topic + " " + payload)
-        humidity_collection.insert({"humedad": float(payload)})
+        #Ajuste de humedad
+        humedad_ajustada = float(payload) + 20
+        humidity_collection.insert({"humedad": humedad_ajustada})
 
 
 client = mqtt.Client()
