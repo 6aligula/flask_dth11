@@ -51,6 +51,9 @@ def on_message(client, userdata, msg):
         print(msg.topic + " " + payload)
         #Ajuste de humedad
         humedad_ajustada = float(payload) + 20
+        # Asegurarse de que la humedad ajustada no exceda el 100%
+        if humedad_ajustada > 90:
+            humedad_ajustada = 70
         humidity_collection.insert({"humedad": humedad_ajustada})
 
 
