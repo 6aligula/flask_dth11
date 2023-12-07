@@ -108,10 +108,17 @@ def get_temperature():
     # Verificar si se encontraron registros
     if not ultimos_7_temperaturas or not ultima_humedad:
         return jsonify({"error": "No se encontraron datos suficientes"})
+        # Extraer y convertir las marcas de tiempo de cada registro
+    
+    fechas = [
+        convert_utc_to_local(ObjectId(registro["_id"]).generation_time, local_tz) 
+        for registro in ultimos_7_temperaturas
+    ]
+
 
     result = {
         "ultimas_temperaturas": [registro["temperatura"] for registro in ultimos_7_temperaturas],
-        "timestamp": convert_utc_to_local(ObjectId(ultimos_7_temperaturas[0]["_id"]).generation_time, local_tz),
+        "timestamp": fechas,
         "mediana": mediana_temp,
         "humedad": ultima_humedad,
     }
