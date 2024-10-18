@@ -58,6 +58,12 @@ def on_message(client, userdata, msg):
         if humedad_ajustada > 90:
             humedad_ajustada = 70
         humidity_collection.insert({"humedad": humedad_ajustada})
+    
+    elif msg.topic == humedad_terra_topic:
+        print(msg.topic + " " + payload)
+        # Procesar la humedad del suelo directamente
+        humedad_tierra = float(payload)
+        soil_moisture_collection.insert({"humedad_tierra": humedad_tierra})
 
 
 client = mqtt.Client()
