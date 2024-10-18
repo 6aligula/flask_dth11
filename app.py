@@ -40,7 +40,7 @@ def on_message(client, userdata, msg):
     payload = msg.payload.decode('utf-8')
     if msg.topic == temperatura_topic:
         print(msg.topic + " " + payload)
-        temperatura = float(payload) - 5
+        temperatura = float(payload)
 
         # Verificar si la temperatura es menor o igual a cero
         if temperatura <= 0:
