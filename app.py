@@ -16,18 +16,21 @@ mqtt_broker = os.getenv("MQTT_BROKER")
 mqtt_port = 1883
 temperatura_topic = os.getenv("TEMP_TOPIC")
 humedad_topic = os.getenv("HUME_TOPIC")
+humedad_terra_topic = os.getenv("HUME_TERRA_TOPIC")
 
 # Configuración de MongoDB
 mongo_client = MongoClient('mongodb://127.0.0.1:27017/')
 db = mongo_client['sensor_database']  # Nombre de la base de datos
 temperature_collection = db['temperatura']  # Colección para la temperatura
 humidity_collection = db['humedad']  # Colección para la humedad
+soil_moisture_collection = db['humedad_tierra']  # Colección para la humedad de la tierra
 
 # Callback para cuando el cliente recibe una CONNACK del servidor
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
     client.subscribe(temperatura_topic)
     client.subscribe(humedad_topic)
+    client.subscribe(humedad_terra_topic)
 
 # Callback que se llama cuando se recibe un mensaje del servidor.
 def on_message(client, userdata, msg):
@@ -152,5 +155,16 @@ def get_humidity():
         "timestamp": convert_utc_to_local(ObjectId(temp["_id"]).generation_time, local_tz)
     } for temp in humidities]
     return jsonify(result)
+
+@app.route('/humedad_tierra')
+def get_soil_moisture():
+    local_tz = pytz.timezone("Europe/Madrid")
+    soil_moistures = soil_moisture_collection.find().sort("_id", -1).limit(10)
+    result = [{
+        "humedad_tierra": temp["humedad_tierra"],
+        "timestamp": convert_utc_to_local(ObjectId(temp["_id"]).generation_time, local_tz)
+    } for temp in soil_moistures]
+    return jsonify(result)
+
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0', port=8080)
