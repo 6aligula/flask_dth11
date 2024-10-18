@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_cors import CORS  # Importar CORS
 import paho.mqtt.client as mqtt
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -10,6 +11,8 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
+
+CORS(app)  # Habilitar CORS para toda la aplicación
 
 # Configura los detalles del broker MQTT
 mqtt_broker = os.getenv("MQTT_BROKER")
